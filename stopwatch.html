@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch</title>
+    <!-- Use Inter font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Load Tailwind CSS from CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background color */
+            color: #e2e8f0; /* Light text color */
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+        .stopwatch-display {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: #ffffff;
+            margin-bottom: 2rem;
+            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-control {
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            border-radius: 9999px; /* Fully rounded buttons */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .btn-control:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+        }
+        .lap-list-container {
+            max-height: 20rem; /* Limit the height of the lap list */
+            overflow-y: auto; /* Add scrollbar if laps exceed the container height */
+            width: 100%;
+        }
+        .lap-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #4a5568;
+        }
+        .lap-item:last-child {
+            border-bottom: none;
+        }
+        .lap-number {
+            font-weight: 500;
+            color: #a0aec0;
+        }
+        .lap-time {
+            font-weight: 600;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-4xl font-bold mb-8 text-gray-200">Stopwatch</h1>
+
+        <!-- Stopwatch Display -->
+        <div id="stopwatch-display" class="stopwatch-display">
+            00:00:00:00
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="flex space-x-4 mb-8">
+            <button id="start-btn" class="btn-control bg-green-500 text-white hover:bg-green-600">Start</button>
+            <button id="pause-btn" class="btn-control bg-yellow-500 text-white hover:bg-yellow-600">Pause</button>
+            <button id="reset-btn" class="btn-control bg-red-500 text-white hover:bg-red-600">Reset</button>
+            <button id="lap-btn" class="btn-control bg-blue-500 text-white hover:bg-blue-600" disabled>Lap</button>
+        </div>
+
+        <!-- Lap Times Display -->
+        <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-xl p-4">
+            <h2 class="text-xl font-semibold mb-4 text-gray-300">Lap Times</h2>
+            <div id="lap-list" class="lap-list-container">
+                <!-- Lap times will be inserted here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const stopwatchDisplay = document.getElementById('stopwatch-display');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const lapBtn = document.getElementById('lap-btn');
+        const lapList = document.getElementById('lap-list');
+
+        // State variables
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval;
+        let isRunning = false;
+        let lapCounter = 1;
+
+        // Function to format the time
+        function formatTime(time) {
+            // Calculate milliseconds, seconds, minutes, and hours
+            const milliseconds = Math.floor((time % 1000) / 10);
+            const seconds = Math.floor((time / 1000) % 60);
+            const minutes = Math.floor((time / (1000 * 60)) % 60);
+            const hours = Math.floor((time / (1000 * 60 * 60)));
+
+            // Pad single-digit numbers with a leading zero
+            const pad = (num) => String(num).padStart(2, '0');
+
+            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}:${pad(milliseconds)}`;
+        }
+
+        // Function to update the stopwatch display
+        function updateDisplay() {
+            // Calculate the elapsed time from the start time
+            elapsedTime = Date.now() - startTime;
+            stopwatchDisplay.textContent = formatTime(elapsedTime);
+        }
+
+        // Event listener for the Start button
+        startBtn.addEventListener('click', () => {
+            if (!isRunning) {
+                // Set the start time
+                startTime = Date.now() - elapsedTime;
+                // Start the timer interval, updating every 10ms
+                timerInterval = setInterval(updateDisplay, 10);
+                isRunning = true;
+                // Disable the Start button and enable the Lap button
+                startBtn.disabled = true;
+                lapBtn.disabled = false;
+            }
+        });
+
+        // Event listener for the Pause button
+        pauseBtn.addEventListener('click', () => {
+            if (isRunning) {
+                // Clear the timer interval to stop the clock
+                clearInterval(timerInterval);
+                isRunning = false;
+                // Enable the Start button and disable the Lap button
+                startBtn.disabled = false;
+                lapBtn.disabled = true;
+            }
+        });
+
+        // Event listener for the Reset button
+        resetBtn.addEventListener('click', () => {
+            // Stop the timer and reset all state variables
+            clearInterval(timerInterval);
+            isRunning = false;
+            startTime = 0;
+            elapsedTime = 0;
+            lapCounter = 1;
+            // Reset the display and clear the lap list
+            stopwatchDisplay.textContent = "00:00:00:00";
+            lapList.innerHTML = "";
+            // Reset button states
+            startBtn.disabled = false;
+            lapBtn.disabled = true;
+        });
+
+        // Event listener for the Lap button
+        lapBtn.addEventListener('click', () => {
+            if (isRunning) {
+                // Create a new list item for the lap time
+                const lapItem = document.createElement('div');
+                lapItem.classList.add('lap-item');
+                
+                // Populate the list item with the lap number and current time
+                lapItem.innerHTML = `
+                    <span class="lap-number">Lap ${lapCounter}</span>
+                    <span class="lap-time">${formatTime(elapsedTime)}</span>
+                `;
+
+                // Add the new lap item to the beginning of the list
+                lapList.prepend(lapItem);
+                lapCounter++;
+            }
+        });
+
+    </script>
+</body>
+</html>
